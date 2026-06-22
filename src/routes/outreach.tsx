@@ -1,11 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Mail, Linkedin, MessageCircle, Phone, Plus } from "lucide-react";
-import { outreach } from "@/lib/mock-data";
+import { outreach as seed, type Outreach } from "@/lib/mock-data";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/outreach")({
   head: () => ({ meta: [{ title: "Outreach Tracker — Rawji IFEAT 2026" }] }),
@@ -22,9 +33,18 @@ const outcomeColor: Record<string, string> = {
 };
 
 function OutreachPage() {
-  const byCh = outreach.reduce<Record<string, number>>((a, o) => ((a[o.channel] = (a[o.channel] ?? 0) + 1), a), {});
+  const [items, setItems] = useState<Outreach[]>(seed);
+  const [open, setOpen] = useState(false);
+
+  const byCh = items.reduce<Record<string, number>>((a, o) => ((a[o.channel] = (a[o.channel] ?? 0) + 1), a), {});
   const chData = Object.entries(byCh).map(([channel, count]) => ({ channel, count }));
-  const responseRate = Math.round((outreach.filter((o) => o.outcome === "Replied" || o.outcome === "Meeting Booked").length / outreach.length) * 100);
+  const responseRate = Math.round((items.filter((o) => o.outcome === "Replied" || o.outcome === "Meeting Booked").length / Math.max(items.length, 1)) * 100);
+
+  function handleAdd(o: Outreach) {
+    setItems((arr) => [o, ...arr]);
+    toast.success("Outreach logged", { description: `${o.channel} → ${o.company}` });
+    setOpen(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -32,15 +52,22 @@ function OutreachPage() {
         module="Module 3"
         title="Outreach Tracker"
         description="Every touchpoint across email, LinkedIn, WhatsApp and phone, by campaign."
-        actions={<Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Log outreach</Button>}
+        actions={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Log outreach</Button>
+            </DialogTrigger>
+            <LogOutreachForm nextId={`O-${1040 + items.length + 1}`} onSubmit={handleAdd} />
+          </Dialog>
+        }
       />
 
       <div className="grid gap-4 lg:grid-cols-4">
         {[
-          { label: "Total touchpoints", value: outreach.length },
+          { label: "Total touchpoints", value: items.length },
           { label: "Response rate", value: `${responseRate}%`, accent: "text-success" },
-          { label: "Meetings booked", value: outreach.filter((o) => o.outcome === "Meeting Booked").length, accent: "text-[var(--gold)]" },
-          { label: "Active campaigns", value: new Set(outreach.map((o) => o.campaign)).size },
+          { label: "Meetings booked", value: items.filter((o) => o.outcome === "Meeting Booked").length, accent: "text-[var(--gold)]" },
+          { label: "Active campaigns", value: new Set(items.map((o) => o.campaign)).size },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4">
@@ -67,7 +94,7 @@ function OutreachPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {outreach.map((o) => {
+                  {items.map((o) => {
                     const Icon = channelIcon[o.channel];
                     return (
                       <tr key={o.id} className="border-b last:border-0 hover:bg-muted/30">
@@ -109,7 +136,7 @@ function OutreachPage() {
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {Array.from(new Set(outreach.map((o) => o.campaign))).map((c) => (
+              {Array.from(new Set(items.map((o) => o.campaign))).map((c) => (
                 <Badge key={c} variant="outline" className="text-[10px]">{c}</Badge>
               ))}
             </div>
@@ -117,5 +144,64 @@ function OutreachPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function LogOutreachForm({ nextId, onSubmit }: { nextId: string; onSubmit: (o: Outreach) => void }) {
+  const [form, setForm] = useState<Outreach>({
+    id: nextId,
+    date: new Date().toISOString().slice(0, 10),
+    company: "",
+    contact: "",
+    channel: "Email",
+    campaign: "Tier A Intro",
+    outcome: "Sent",
+  });
+  return (
+    <DialogContent className="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Log outreach</DialogTitle>
+        <DialogDescription>Record an email, LinkedIn, WhatsApp or phone touchpoint.</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-3 py-2">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Company"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Robertet SA" /></Field>
+          <Field label="Contact"><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Élise Martin" /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date"><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></Field>
+          <Field label="Channel">
+            <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v as Outreach["channel"] })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Email","LinkedIn","WhatsApp","Phone"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Campaign"><Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} /></Field>
+          <Field label="Outcome">
+            <Select value={form.outcome} onValueChange={(v) => setForm({ ...form, outcome: v as Outreach["outcome"] })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Sent","Opened","Replied","Meeting Booked","No Response"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={() => {
+          if (!form.company || !form.contact) return toast.error("Company and contact are required");
+          onSubmit(form);
+        }}>Log outreach</Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

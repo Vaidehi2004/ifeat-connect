@@ -1,11 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Plus, Search, Filter, Mail } from "lucide-react";
-import { principals } from "@/lib/mock-data";
+import { principals as seed, type Principal } from "@/lib/mock-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/principals")({
   head: () => ({ meta: [{ title: "Principal Tracker — Rawji IFEAT 2026" }] }),
@@ -29,8 +39,25 @@ const statusColor: Record<string, string> = {
 };
 
 function PrincipalsPage() {
+  const [items, setItems] = useState<Principal[]>(seed);
+  const [open, setOpen] = useState(false);
+  const [tier, setTier] = useState<"all" | "A" | "B" | "C">("all");
+  const [q, setQ] = useState("");
+
+  const filtered = items.filter((p) => {
+    if (tier !== "all" && p.priority !== tier) return false;
+    if (q && !`${p.company} ${p.contact} ${p.country}`.toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+
   const tierCounts = { A: 0, B: 0, C: 0 } as Record<string, number>;
-  principals.forEach((p) => (tierCounts[p.priority] = (tierCounts[p.priority] ?? 0) + 1));
+  items.forEach((p) => (tierCounts[p.priority] = (tierCounts[p.priority] ?? 0) + 1));
+
+  function handleAdd(p: Principal) {
+    setItems((arr) => [p, ...arr]);
+    toast.success("Principal added", { description: `${p.company} (${p.country})` });
+    setOpen(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -40,15 +67,31 @@ function PrincipalsPage() {
         description="Identified manufacturers and brand owners targeted for distributorship and direct supply."
         actions={
           <>
-            <Button variant="outline" size="sm"><Filter className="mr-1.5 h-4 w-4" />Filter</Button>
-            <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Add principal</Button>
+            <Select value={tier} onValueChange={(v) => setTier(v as typeof tier)}>
+              <SelectTrigger className="h-9 w-[140px]">
+                <Filter className="mr-1.5 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tiers</SelectItem>
+                <SelectItem value="A">Tier A</SelectItem>
+                <SelectItem value="B">Tier B</SelectItem>
+                <SelectItem value="C">Tier C</SelectItem>
+              </SelectContent>
+            </Select>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Add principal</Button>
+              </DialogTrigger>
+              <AddPrincipalForm nextId={`P-${String(items.length + 1).padStart(3, "0")}`} onSubmit={handleAdd} />
+            </Dialog>
           </>
         }
       />
 
       <div className="grid gap-3 md:grid-cols-4">
         {[
-          { label: "Total principals", value: principals.length, sub: "across 6 regions" },
+          { label: "Total principals", value: items.length, sub: "across 6 regions" },
           { label: "Tier A", value: tierCounts.A, sub: "high-priority targets" },
           { label: "Tier B", value: tierCounts.B, sub: "secondary targets" },
           { label: "Tier C", value: tierCounts.C, sub: "exploratory" },
@@ -67,9 +110,9 @@ function PrincipalsPage() {
         <div className="flex items-center gap-3 border-b border-border p-4">
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search company, contact, country..." className="pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search company, contact, country..." className="pl-9" />
           </div>
-          <Badge variant="outline" className="font-mono">{principals.length} records</Badge>
+          <Badge variant="outline" className="font-mono">{filtered.length} records</Badge>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -87,7 +130,7 @@ function PrincipalsPage() {
               </tr>
             </thead>
             <tbody>
-              {principals.map((p) => (
+              {filtered.map((p) => (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <div className="font-medium">{p.company}</div>
@@ -133,10 +176,85 @@ function PrincipalsPage() {
                   <td className="px-4 text-xs">{p.owner}</td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">No principals match your filters.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
       </Card>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function AddPrincipalForm({ nextId, onSubmit }: { nextId: string; onSubmit: (p: Principal) => void }) {
+  const [form, setForm] = useState<Principal>({
+    id: nextId, company: "", country: "", region: "Europe", category: "Naturals",
+    contact: "", email: "", priority: "B", status: "Identified", score: 60, owner: "A. Rawji",
+  });
+  return (
+    <DialogContent className="sm:max-w-xl">
+      <DialogHeader>
+        <DialogTitle>Add principal</DialogTitle>
+        <DialogDescription>Capture a new target manufacturer or brand owner.</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-3 py-2">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Company"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Fragrances" /></Field>
+          <Field label="Category">
+            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Naturals","Aroma Chemicals","Citrus","Botanicals","Flavors","Fragrance","Pine Chemicals","Carriers","Distribution"].map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Country"><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="France" /></Field>
+          <Field label="Region">
+            <Select value={form.region} onValueChange={(v) => setForm({ ...form, region: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Europe","North America","South America","Asia Pacific","MENA","Africa"].map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Contact name"><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Jane Doe" /></Field>
+          <Field label="Email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="jane@acme.com" /></Field>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Tier">
+            <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as Principal["priority"] })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["A","B","C"].map((t) => <SelectItem key={t} value={t}>Tier {t}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Score"><Input type="number" min={0} max={100} value={form.score} onChange={(e) => setForm({ ...form, score: Number(e.target.value) })} /></Field>
+          <Field label="Owner"><Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></Field>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={() => {
+          if (!form.company || !form.contact) return toast.error("Company and contact are required");
+          onSubmit(form);
+        }}>Add principal</Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

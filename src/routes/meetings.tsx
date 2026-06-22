@@ -1,10 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Plus, MapPin, Clock } from "lucide-react";
-import { meetings } from "@/lib/mock-data";
+import { meetings as seed, type Meeting } from "@/lib/mock-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/meetings")({
   head: () => ({ meta: [{ title: "Meeting Planner — Rawji IFEAT 2026" }] }),
@@ -12,7 +24,16 @@ export const Route = createFileRoute("/meetings")({
 });
 
 function MeetingsPage() {
-  const byDate = meetings.reduce<Record<string, typeof meetings>>((a, m) => {
+  const [items, setItems] = useState<Meeting[]>(seed);
+  const [open, setOpen] = useState(false);
+
+  function handleAdd(m: Meeting) {
+    setItems((arr) => [...arr, m]);
+    toast.success("Meeting scheduled", { description: `${m.company} · ${m.date} ${m.time}` });
+    setOpen(false);
+  }
+
+  const byDate = items.reduce<Record<string, Meeting[]>>((a, m) => {
     (a[m.date] ??= []).push(m);
     return a;
   }, {});
@@ -24,15 +45,22 @@ function MeetingsPage() {
         module="Module 4"
         title="Meeting Planner"
         description="On-floor schedule for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
-        actions={<Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Schedule meeting</Button>}
+        actions={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Schedule meeting</Button>
+            </DialogTrigger>
+            <ScheduleMeetingForm nextId={`M-${200 + items.length + 1}`} onSubmit={handleAdd} />
+          </Dialog>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          { label: "Total meetings", value: meetings.length },
-          { label: "Confirmed", value: meetings.length, accent: "text-success" },
-          { label: "Conducted", value: meetings.filter((m) => m.outcome).length },
-          { label: "Tier A", value: meetings.filter((m) => m.priority === "A").length, accent: "text-[var(--gold)]" },
+          { label: "Total meetings", value: items.length },
+          { label: "Confirmed", value: items.length, accent: "text-success" },
+          { label: "Conducted", value: items.filter((m) => m.outcome).length },
+          { label: "Tier A", value: items.filter((m) => m.priority === "A").length, accent: "text-[var(--gold)]" },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4">
@@ -89,6 +117,71 @@ function MeetingsPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ScheduleMeetingForm({ nextId, onSubmit }: { nextId: string; onSubmit: (m: Meeting) => void }) {
+  const [form, setForm] = useState<Meeting>({
+    id: nextId,
+    date: "2026-10-06",
+    time: "10:00",
+    company: "",
+    attendee: "",
+    objective: "",
+    owner: "A. Rawji",
+    priority: "A",
+  });
+  return (
+    <DialogContent className="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Schedule a meeting</DialogTitle>
+        <DialogDescription>Book a slot on the IFEAT 2026 Bangkok floor.</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-3 py-2">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Company"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Robertet SA" /></Field>
+          <Field label="Attendee"><Input value={form.attendee} onChange={(e) => setForm({ ...form, attendee: e.target.value })} placeholder="Élise Martin" /></Field>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Date">
+            <Select value={form.date} onValueChange={(v) => setForm({ ...form, date: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08"].map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Time"><Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></Field>
+          <Field label="Tier">
+            <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as Meeting["priority"] })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["A","B","C"].map((p) => <SelectItem key={p} value={p}>Tier {p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <Field label="Objective"><Textarea rows={3} value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="Discuss naturals portfolio expansion in South Asia" /></Field>
+        <Field label="Owner"><Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></Field>
+      </div>
+      <DialogFooter>
+        <Button onClick={() => {
+          if (!form.company || !form.attendee) return toast.error("Company and attendee are required");
+          onSubmit(form);
+        }}>Schedule meeting</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      {children}
     </div>
   );
 }
