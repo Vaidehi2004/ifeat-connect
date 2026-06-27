@@ -13,7 +13,6 @@ import { Route as PrincipalsRouteImport } from './routes/principals'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as OutreachRouteImport } from './routes/outreach'
 import { Route as MeetingsRouteImport } from './routes/meetings'
-import { Route as BudgetRouteImport } from './routes/budget'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PrincipalsRoute = PrincipalsRouteImport.update({
@@ -36,11 +35,6 @@ const MeetingsRoute = MeetingsRouteImport.update({
   path: '/meetings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BudgetRoute = BudgetRouteImport.update({
-  id: '/budget',
-  path: '/budget',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,7 +43,6 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/budget': typeof BudgetRoute
   '/meetings': typeof MeetingsRoute
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
@@ -57,7 +50,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/budget': typeof BudgetRoute
   '/meetings': typeof MeetingsRoute
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
@@ -66,7 +58,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/budget': typeof BudgetRoute
   '/meetings': typeof MeetingsRoute
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
@@ -74,28 +65,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/budget'
-    | '/meetings'
-    | '/outreach'
-    | '/pipeline'
-    | '/principals'
+  fullPaths: '/' | '/meetings' | '/outreach' | '/pipeline' | '/principals'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/budget' | '/meetings' | '/outreach' | '/pipeline' | '/principals'
-  id:
-    | '__root__'
-    | '/'
-    | '/budget'
-    | '/meetings'
-    | '/outreach'
-    | '/pipeline'
-    | '/principals'
+  to: '/' | '/meetings' | '/outreach' | '/pipeline' | '/principals'
+  id: '__root__' | '/' | '/meetings' | '/outreach' | '/pipeline' | '/principals'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BudgetRoute: typeof BudgetRoute
   MeetingsRoute: typeof MeetingsRoute
   OutreachRoute: typeof OutreachRoute
   PipelineRoute: typeof PipelineRoute
@@ -132,13 +109,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeetingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/budget': {
-      id: '/budget'
-      path: '/budget'
-      fullPath: '/budget'
-      preLoaderRoute: typeof BudgetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -151,7 +121,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BudgetRoute: BudgetRoute,
   MeetingsRoute: MeetingsRoute,
   OutreachRoute: OutreachRoute,
   PipelineRoute: PipelineRoute,
@@ -160,13 +129,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

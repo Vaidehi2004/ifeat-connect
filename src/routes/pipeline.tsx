@@ -170,7 +170,6 @@ function AddOpportunityForm({ nextId, onSubmit }: { nextId: string; onSubmit: (o
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Revenue (USD)"><Input type="number" min={0} step={1000} value={form.revenue} onChange={(e) => setForm({ ...form, revenue: Number(e.target.value) })} /></Field>
           <Field label="Probability">
             <Select value={String(form.probability)} onValueChange={(v) => setForm({ ...form, probability: Number(v) })}>
               <SelectTrigger><SelectValue /></SelectTrigger>

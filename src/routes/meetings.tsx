@@ -92,8 +92,6 @@ function MeetingsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />{m.time}
-                          <span>·</span>
-                          <MapPin className="h-3 w-3" />Booth A-12
                         </div>
                         <div className="mt-1 text-base font-semibold">{m.company}</div>
                         <div className="text-xs text-muted-foreground">w/ {m.attendee}</div>

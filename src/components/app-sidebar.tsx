@@ -27,7 +27,6 @@ const modules = [
   { title: "Outreach Tracker", url: "/outreach", icon: Send, mod: "M3" },
   { title: "Meeting Planner", url: "/meetings", icon: CalendarDays, mod: "M4" },
   { title: "Opportunity Pipeline", url: "/pipeline", icon: TrendingUp, mod: "M5" },
-  { title: "Budget vs ROI", url: "/budget", icon: Wallet, mod: "M6" },
 ];
 
 export function AppSidebar() {
@@ -36,9 +35,6 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--gold)] to-amber-600 text-sidebar-primary-foreground shadow-lg">
-            <Sparkles className="h-5 w-5" />
-          </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="font-display text-sm font-semibold tracking-tight text-sidebar-foreground">
               Rawji × IFEAT 2026

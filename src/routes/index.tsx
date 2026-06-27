@@ -24,7 +24,7 @@ const fmt = (n: number, currency = false) =>
   currency ? `$${(n / 1000).toFixed(0)}k` : n.toLocaleString();
 
 const heroKpis = [
-  { key: "Principals Identified", icon: Target, accent: "from-primary to-cyan-700" },
+  { key: "Clients Identified", icon: Target, accent: "from-primary to-cyan-700" },
   { key: "Meetings Confirmed", icon: Handshake, accent: "from-emerald-600 to-emerald-800" },
   { key: "Qualified Opportunities", icon: TrendingUp, accent: "from-amber-500 to-orange-700" },
   { key: "Countries Covered", icon: Globe2, accent: "from-violet-600 to-indigo-800" },
@@ -34,7 +34,7 @@ function Dashboard() {
   const byKey = Object.fromEntries(kpis.map((k) => [k.name, k]));
   const totalTarget = kpis.reduce((s, k) => s + k.target, 0);
   const totalActual = kpis.reduce((s, k) => s + k.actual, 0);
-  const overall = Math.round((totalActual / totalTarget) * 100);
+  const overall = totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0;
 
   return (
     <div className="space-y-8">
@@ -53,8 +53,8 @@ function Dashboard() {
       {/* Hero KPI cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {heroKpis.map(({ key, icon: Icon, accent }) => {
-          const k = byKey[key];
-          const pct = Math.min(100, Math.round((k.actual / k.target) * 100));
+          const k = byKey[key] ?? { actual: 0, target: 0 };
+          const pct = k.target > 0 ? Math.min(100, Math.round((k.actual / k.target) * 100)) : 0;
           return (
             <Card key={key} className="relative overflow-hidden border-border/60">
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent}`} />
@@ -86,7 +86,7 @@ function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Pipeline Funnel</CardTitle>
-            <Badge variant="outline" className="font-mono text-xs">Conversion {Math.round((funnel[funnel.length - 1].count / funnel[0].count) * 100)}%</Badge>
+            <Badge variant="outline" className="font-mono text-xs">Conversion {funnel.length >= 2 ? Math.round((funnel[funnel.length - 1].count / funnel[0].count) * 100) : 0}%</Badge>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
@@ -107,15 +107,15 @@ function Dashboard() {
           </CardHeader>
           <CardContent className="flex h-72 items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart innerRadius="60%" outerRadius="100%" data={[{ name: "p", value: Math.round((byKey["Pipeline Value"].actual / byKey["Pipeline Value"].target) * 100), fill: "var(--chart-2)" }]} startAngle={90} endAngle={-270}>
+              <RadialBarChart innerRadius="60%" outerRadius="100%" data={[{ name: "p", value: byKey["Pipeline Value"]?.target > 0 ? Math.round((byKey["Pipeline Value"].actual / byKey["Pipeline Value"].target) * 100) : 0, fill: "var(--chart-2)" }]} startAngle={90} endAngle={-270}>
                 <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
                 <RadialBar background dataKey="value" cornerRadius={20} />
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="absolute text-center">
-              <div className="text-3xl font-semibold">{fmt(byKey["Pipeline Value"].actual, true)}</div>
-              <div className="text-xs text-muted-foreground">of {fmt(byKey["Pipeline Value"].target, true)} target</div>
-              <div className="mt-2 text-xs text-[var(--gold)]">Weighted {fmt(byKey["Weighted Pipeline"].actual, true)}</div>
+              <div className="text-3xl font-semibold">{fmt(byKey["Pipeline Value"]?.actual ?? 0, true)}</div>
+              <div className="text-xs text-muted-foreground">of {fmt(byKey["Pipeline Value"]?.target ?? 0, true)} target</div>
+              <div className="mt-2 text-xs text-[var(--gold)]">Weighted {fmt(byKey["Weighted Pipeline"]?.actual ?? 0, true)}</div>
             </div>
           </CardContent>
         </Card>
@@ -185,7 +185,7 @@ function Dashboard() {
               </thead>
               <tbody>
                 {kpis.map((k) => {
-                  const pct = Math.round((k.actual / k.target) * 100);
+                  const pct = k.target > 0 ? Math.round((k.actual / k.target) * 100) : 0;
                   const status =
                     pct >= 90 ? { label: "On track", cls: "bg-success/15 text-success" } :
                     pct >= 60 ? { label: "At risk", cls: "bg-warning/20 text-warning-foreground" } :
