@@ -1,9 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  Navigate,
+  createRootRouteWithContext,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import "../styles.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider, useAuth } from "../lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -81,33 +89,57 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <div className="flex flex-1 flex-col">
-            <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger />
-                <div className="hidden text-sm text-muted-foreground md:block">
-                  Rawji IFEAT 2026 — Campaign Management Portal
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-[var(--gold)]/40 text-[var(--gold)]">
-                  LIVE · Pre-event
-                </Badge>
-                <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground md:flex">
-                  AR
-                </div>
-              </div>
-            </header>
-            <main className="flex-1 px-6 py-6 lg:px-10">
-              <Outlet />
-            </main>
-          </div>
-        </div>
-        <Toaster position="top-right" richColors />
-      </SidebarProvider>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppShell() {
+  const { user, loading } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (pathname === "/login") {
+    return (
+      <>
+        <Outlet />
+        <Toaster position="top-right" richColors />
+      </>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <div className="hidden text-sm text-muted-foreground md:block">
+                Rawji IFEAT 2026 — Campaign Management Portal
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 px-6 py-6 lg:px-10">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+      <Toaster position="top-right" richColors />
+    </SidebarProvider>
   );
 }

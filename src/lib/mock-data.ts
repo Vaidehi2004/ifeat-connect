@@ -1,12 +1,23 @@
-export const kpis: { name: string; target: number; actual: number; group: string; currency?: boolean }[] = [];
+export const kpis: {
+  name: string;
+  target: number;
+  actual: number;
+  group: string;
+  currency?: boolean;
+}[] = [];
 
 export const funnel: { stage: string; count: number }[] = [];
 
 export const regionData: { region: string; principals: number; meetings: number }[] = [];
 
-export const outreachTimeline: { week: string; emails: number; linkedin: number; whatsapp: number }[] = [];
+export const outreachTimeline: {
+  week: string;
+  emails: number;
+  linkedin: number;
+  whatsapp: number;
+}[] = [];
 
-export type Principal = {
+export type principal = {
   id: string;
   company: string;
   country: string;
@@ -15,13 +26,21 @@ export type Principal = {
   contact: string;
   email: string;
   priority: "A" | "B" | "C";
-  status: "Identified" | "Contacted" | "Responded" | "Meeting Set" | "Met" | "Negotiation" | "Won" | "Lost";
+  status:
+    | "Identified"
+    | "Contacted"
+    | "Responded"
+    | "Meeting Set"
+    | "Met"
+    | "Negotiation"
+    | "Won"
+    | "Lost";
   score: number;
   meetingDate?: string;
   owner: string;
 };
 
-export const principals: Principal[] = [];
+export const principals: principal[] = [];
 
 export type Outreach = {
   id: string;

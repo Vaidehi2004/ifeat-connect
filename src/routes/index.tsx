@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
-  LineChart, Line, Legend, RadialBarChart, RadialBar, PolarAngleAxis,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+  Legend,
+  RadialBarChart,
+  RadialBar,
+  PolarAngleAxis,
 } from "recharts";
 import { ArrowUpRight, Target, Mail, Handshake, Globe2, TrendingUp, Trophy } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -61,13 +72,17 @@ function Dashboard() {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">{key}</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {key}
+                    </div>
                     <div className="mt-2 flex items-baseline gap-2">
                       <span className="text-3xl font-semibold tracking-tight">{k.actual}</span>
                       <span className="text-sm text-muted-foreground">/ {k.target}</span>
                     </div>
                   </div>
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${accent} text-white shadow`}>
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${accent} text-white shadow`}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
@@ -86,7 +101,13 @@ function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Pipeline Funnel</CardTitle>
-            <Badge variant="outline" className="font-mono text-xs">Conversion {funnel.length >= 2 ? Math.round((funnel[funnel.length - 1].count / funnel[0].count) * 100) : 0}%</Badge>
+            <Badge variant="outline" className="font-mono text-xs">
+              Conversion{" "}
+              {funnel.length >= 2
+                ? Math.round((funnel[funnel.length - 1].count / funnel[0].count) * 100)
+                : 0}
+              %
+            </Badge>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
@@ -94,7 +115,13 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="stage" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
                 <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                  }}
+                />
                 <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -107,15 +134,38 @@ function Dashboard() {
           </CardHeader>
           <CardContent className="flex h-72 items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart innerRadius="60%" outerRadius="100%" data={[{ name: "p", value: byKey["Pipeline Value"]?.target > 0 ? Math.round((byKey["Pipeline Value"].actual / byKey["Pipeline Value"].target) * 100) : 0, fill: "var(--chart-2)" }]} startAngle={90} endAngle={-270}>
+              <RadialBarChart
+                innerRadius="60%"
+                outerRadius="100%"
+                data={[
+                  {
+                    name: "p",
+                    value:
+                      byKey["Pipeline Value"]?.target > 0
+                        ? Math.round(
+                            (byKey["Pipeline Value"].actual / byKey["Pipeline Value"].target) * 100,
+                          )
+                        : 0,
+                    fill: "var(--chart-2)",
+                  },
+                ]}
+                startAngle={90}
+                endAngle={-270}
+              >
                 <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
                 <RadialBar background dataKey="value" cornerRadius={20} />
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="absolute text-center">
-              <div className="text-3xl font-semibold">{fmt(byKey["Pipeline Value"]?.actual ?? 0, true)}</div>
-              <div className="text-xs text-muted-foreground">of {fmt(byKey["Pipeline Value"]?.target ?? 0, true)} target</div>
-              <div className="mt-2 text-xs text-[var(--gold)]">Weighted {fmt(byKey["Weighted Pipeline"]?.actual ?? 0, true)}</div>
+              <div className="text-3xl font-semibold">
+                {fmt(byKey["Pipeline Value"]?.actual ?? 0, true)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                of {fmt(byKey["Pipeline Value"]?.target ?? 0, true)} target
+              </div>
+              <div className="mt-2 text-xs text-[var(--gold)]">
+                Weighted {fmt(byKey["Weighted Pipeline"]?.actual ?? 0, true)}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -132,11 +182,35 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
                 <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                  }}
+                />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="emails" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="linkedin" stroke="var(--chart-2)" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="whatsapp" stroke="var(--chart-3)" strokeWidth={2} dot={{ r: 3 }} />
+                <Line
+                  type="monotone"
+                  dataKey="emails"
+                  stroke="var(--chart-1)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="linkedin"
+                  stroke="var(--chart-2)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="whatsapp"
+                  stroke="var(--chart-3)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -151,8 +225,20 @@ function Dashboard() {
               <BarChart data={regionData} layout="vertical" margin={{ left: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <YAxis type="category" dataKey="region" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" width={100} />
-                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                <YAxis
+                  type="category"
+                  dataKey="region"
+                  tick={{ fontSize: 11 }}
+                  stroke="var(--muted-foreground)"
+                  width={100}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                  }}
+                />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="principals" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
                 <Bar dataKey="meetings" fill="var(--gold)" radius={[0, 4, 4, 0]} />
@@ -187,9 +273,11 @@ function Dashboard() {
                 {kpis.map((k) => {
                   const pct = k.target > 0 ? Math.round((k.actual / k.target) * 100) : 0;
                   const status =
-                    pct >= 90 ? { label: "On track", cls: "bg-success/15 text-success" } :
-                    pct >= 60 ? { label: "At risk", cls: "bg-warning/20 text-warning-foreground" } :
-                    { label: "Behind", cls: "bg-destructive/15 text-destructive" };
+                    pct >= 90
+                      ? { label: "On track", cls: "bg-success/15 text-success" }
+                      : pct >= 60
+                        ? { label: "At risk", cls: "bg-warning/20 text-warning-foreground" }
+                        : { label: "Behind", cls: "bg-destructive/15 text-destructive" };
                   return (
                     <tr key={k.name} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="py-2.5 font-medium">{k.name}</td>
@@ -203,7 +291,9 @@ function Dashboard() {
                         </div>
                       </td>
                       <td>
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${status.cls}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${status.cls}`}
+                        >
                           {status.label}
                         </span>
                       </td>

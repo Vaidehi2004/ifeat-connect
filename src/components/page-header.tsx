@@ -17,9 +17,7 @@ export function PageHeader({
         <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary/70">
           {module}
         </div>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h1>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
         {description && (
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
         )}
