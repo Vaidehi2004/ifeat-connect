@@ -83,6 +83,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
+import { UserMenu } from "@/components/user-menu";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -133,6 +134,7 @@ function AppShell() {
                 Rawji IFEAT 2026 — Campaign Management Portal
               </div>
             </div>
+            <UserMenu />
           </header>
           <main className="flex-1 px-6 py-6 lg:px-10">
             <Outlet />

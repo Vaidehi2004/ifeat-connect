@@ -29,7 +29,7 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/principals")({
-  head: () => ({ meta: [{ title: "principal Tracker — Rawji IFEAT 2026" }] }),
+  head: () => ({ meta: [{ title: "Client Tracker — Rawji IFEAT 2026" }] }),
   component: principalsPage,
 });
 

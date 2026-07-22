@@ -23,7 +23,7 @@ import {
 
 const modules = [
   { title: "Executive Dashboard", url: "/", icon: LayoutDashboard, mod: "M1" },
-  { title: "Principal Tracker", url: "/principals", icon: Users, mod: "M2" },
+  { title: "Client Tracker", url: "/principals", icon: Users, mod: "M2" },
   { title: "Outreach Tracker", url: "/outreach", icon: Send, mod: "M3" },
   { title: "Meeting Planner", url: "/meetings", icon: CalendarDays, mod: "M4" },
   { title: "Opportunity Pipeline", url: "/pipeline", icon: TrendingUp, mod: "M5" },
