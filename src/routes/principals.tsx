@@ -27,6 +27,7 @@ import { Plus, Search, Filter, Mail } from "lucide-react";
 import { type principal } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/principals")({
   head: () => ({ meta: [{ title: "Client Tracker — Rawji IFEAT 2026" }] }),
@@ -56,6 +57,7 @@ function principalsPage() {
     queryFn: () => apiFetch<principal[]>("/api/principals"),
   });
   const [open, setOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<principal | null>(null);
   const [tier, setTier] = useState<"all" | "A" | "B" | "C">("all");
   const [q, setQ] = useState("");
 
@@ -78,6 +80,28 @@ function principalsPage() {
       setOpen(false);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to add principal"),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (p: principal) =>
+      apiFetch<principal>(`/api/principals/${p.id}`, { method: "PATCH", body: JSON.stringify(p) }),
+    onSuccess: (p) => {
+      queryClient.invalidateQueries({ queryKey: ["principals"] });
+      toast.success("Client updated", { description: `${p.company} (${p.country})` });
+      setEditingItem(null);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Failed to update principal"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/principals/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["principals"] });
+      toast.success("Client removed");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Failed to delete principal"),
   });
 
   return (
@@ -108,6 +132,14 @@ function principalsPage() {
                 </Button>
               </DialogTrigger>
               <AddprincipalForm onSubmit={(p) => addMutation.mutate(p)} />
+            </Dialog>
+            <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
+              {editingItem && (
+                <AddprincipalForm
+                  initial={editingItem}
+                  onSubmit={(p) => editMutation.mutate({ ...p, id: editingItem.id })}
+                />
+              )}
             </Dialog>
           </>
         }
@@ -160,6 +192,7 @@ function principalsPage() {
                 <th className="font-medium">Score</th>
                 <th className="font-medium">Meeting</th>
                 <th className="px-4 font-medium">Owner</th>
+                <th className="px-4 font-medium" />
               </tr>
             </thead>
             <tbody>
@@ -221,11 +254,19 @@ function principalsPage() {
                   </td>
                   <td className="text-xs text-muted-foreground">{p.meetingDate ?? "—"}</td>
                   <td className="px-4 text-xs">{p.owner}</td>
+                  <td className="px-4 text-right">
+                    <RowActions
+                      itemLabel={p.company}
+                      onEdit={() => setEditingItem(p)}
+                      deleting={deleteMutation.isPending}
+                      onDelete={() => deleteMutation.mutate(p.id)}
+                    />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     No principals match your filters.
                   </td>
                 </tr>
@@ -247,24 +288,36 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function AddprincipalForm({ onSubmit }: { onSubmit: (p: Omit<principal, "id">) => void }) {
-  const [form, setForm] = useState<Omit<principal, "id">>({
-    company: "",
-    country: "",
-    region: "Europe",
-    category: "Naturals",
-    contact: "",
-    email: "",
-    priority: "B",
-    status: "Identified",
-    score: 60,
-    owner: "A. Rawji",
-  });
+function AddprincipalForm({
+  onSubmit,
+  initial,
+}: {
+  onSubmit: (p: Omit<principal, "id">) => void;
+  initial?: principal;
+}) {
+  const [form, setForm] = useState<Omit<principal, "id">>(
+    initial ?? {
+      company: "",
+      country: "",
+      region: "Europe",
+      category: "Naturals",
+      contact: "",
+      email: "",
+      priority: "B",
+      status: "Identified",
+      score: 60,
+      owner: "A. Rawji",
+    },
+  );
   return (
     <DialogContent className="sm:max-w-xl">
       <DialogHeader>
-        <DialogTitle>Add Client</DialogTitle>
-        <DialogDescription>Capture a new target manufacturer or brand owner.</DialogDescription>
+        <DialogTitle>{initial ? "Edit Client" : "Add Client"}</DialogTitle>
+        <DialogDescription>
+          {initial
+            ? "Update this manufacturer or brand owner's details."
+            : "Capture a new target manufacturer or brand owner."}
+        </DialogDescription>
       </DialogHeader>
       <div className="grid gap-3 py-2">
         <div className="grid grid-cols-2 gap-3">
@@ -385,7 +438,7 @@ function AddprincipalForm({ onSubmit }: { onSubmit: (p: Omit<principal, "id">) =
             onSubmit(form);
           }}
         >
-          Add Client
+          {initial ? "Save changes" : "Add Client"}
         </Button>
       </DialogFooter>
     </DialogContent>

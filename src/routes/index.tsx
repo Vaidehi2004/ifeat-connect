@@ -24,7 +24,7 @@ import { kpis, funnel, regionData, outreachTimeline } from "@/lib/mock-data";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Executive Dashboard — Rawji IFEAT 2026" },
+    { title: "Executive Dashboard — Rawji IFEAT 2026" },
       { name: "description", content: "Real-time campaign KPIs for IFEAT 2026 Bangkok." },
     ],
   }),

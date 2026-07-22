@@ -27,6 +27,7 @@ import { Plus } from "lucide-react";
 import { type Opportunity } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/pipeline")({
   head: () => ({ meta: [{ title: "Opportunity Pipeline — Rawji IFEAT 2026" }] }),
@@ -56,6 +57,7 @@ function PipelinePage() {
     queryFn: () => apiFetch<Opportunity[]>("/api/opportunities"),
   });
   const [open, setOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Opportunity | null>(null);
 
   const addMutation = useMutation({
     mutationFn: (o: Omit<Opportunity, "id">) =>
@@ -68,6 +70,33 @@ function PipelinePage() {
       setOpen(false);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to add opportunity"),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (o: Opportunity) =>
+      apiFetch<Opportunity>(`/api/opportunities/${o.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(o),
+      }),
+    onSuccess: (o) => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("Opportunity updated", {
+        description: `${o.company} · $${(o.revenue / 1000).toFixed(0)}k`,
+      });
+      setEditingItem(null);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Failed to update opportunity"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/opportunities/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("Opportunity removed");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Failed to delete opportunity"),
   });
 
   return (
@@ -88,6 +117,15 @@ function PipelinePage() {
           </Dialog>
         }
       />
+
+      <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
+        {editingItem && (
+          <AddOpportunityForm
+            initial={editingItem}
+            onSubmit={(o) => editMutation.mutate({ ...o, id: editingItem.id })}
+          />
+        )}
+      </Dialog>
 
       <div className="flex flex-col gap-4">
         {stages.map((stage) => {
@@ -111,7 +149,17 @@ function PipelinePage() {
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-semibold text-sm">{o.company}</div>
-                        <span className="font-mono text-[10px] text-muted-foreground">{o.id}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {o.id}
+                          </span>
+                          <RowActions
+                            itemLabel={o.company}
+                            onEdit={() => setEditingItem(o)}
+                            deleting={deleteMutation.isPending}
+                            onDelete={() => deleteMutation.mutate(o.id)}
+                          />
+                        </div>
                       </div>
                       <div className="mt-0.5 text-[11px] text-muted-foreground">
                         {o.country} · {o.region}
@@ -157,21 +205,33 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function AddOpportunityForm({ onSubmit }: { onSubmit: (o: Omit<Opportunity, "id">) => void }) {
-  const [form, setForm] = useState<Omit<Opportunity, "id">>({
-    company: "",
-    country: "",
-    region: "Europe",
-    type: "Distribution",
-    revenue: 50000,
-    probability: 0.3,
-    stage: "Discovery",
-  });
+function AddOpportunityForm({
+  onSubmit,
+  initial,
+}: {
+  onSubmit: (o: Omit<Opportunity, "id">) => void;
+  initial?: Opportunity;
+}) {
+  const [form, setForm] = useState<Omit<Opportunity, "id">>(
+    initial ?? {
+      company: "",
+      country: "",
+      region: "Europe",
+      type: "Distribution",
+      revenue: 50000,
+      probability: 0.3,
+      stage: "Discovery",
+    },
+  );
   return (
     <DialogContent className="sm:max-w-xl">
       <DialogHeader>
-        <DialogTitle>Add opportunity</DialogTitle>
-        <DialogDescription>Create a new deal in the IFEAT 2026 pipeline.</DialogDescription>
+        <DialogTitle>{initial ? "Edit opportunity" : "Add opportunity"}</DialogTitle>
+        <DialogDescription>
+          {initial
+            ? "Update this deal's details."
+            : "Create a new deal in the IFEAT 2026 pipeline."}
+        </DialogDescription>
       </DialogHeader>
       <div className="grid gap-3 py-2">
         <div className="grid grid-cols-2 gap-3">
@@ -275,7 +335,7 @@ function AddOpportunityForm({ onSubmit }: { onSubmit: (o: Omit<Opportunity, "id"
             onSubmit(form);
           }}
         >
-          Add opportunity
+          {initial ? "Save changes" : "Add opportunity"}
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -28,6 +28,7 @@ import { Plus, MapPin, Clock } from "lucide-react";
 import { type Meeting } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/meetings")({
   head: () => ({ meta: [{ title: "Meeting Planner — Rawji IFEAT 2026" }] }),
@@ -41,6 +42,7 @@ function MeetingsPage() {
     queryFn: () => apiFetch<Meeting[]>("/api/meetings"),
   });
   const [open, setOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Meeting | null>(null);
 
   const addMutation = useMutation({
     mutationFn: (m: Omit<Meeting, "id">) =>
@@ -52,6 +54,26 @@ function MeetingsPage() {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Failed to schedule meeting"),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (m: Meeting) =>
+      apiFetch<Meeting>(`/api/meetings/${m.id}`, { method: "PATCH", body: JSON.stringify(m) }),
+    onSuccess: (m) => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success("Meeting updated", { description: `${m.company} · ${m.date} ${m.time}` });
+      setEditingItem(null);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to update meeting"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/meetings/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success("Meeting removed");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to delete meeting"),
   });
 
   const byDate = items.reduce<Record<string, Meeting[]>>((a, m) => {
@@ -78,6 +100,15 @@ function MeetingsPage() {
           </Dialog>
         }
       />
+
+      <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
+        {editingItem && (
+          <ScheduleMeetingForm
+            initial={editingItem}
+            onSubmit={(m) => editMutation.mutate({ ...m, id: editingItem.id })}
+          />
+        )}
+      </Dialog>
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
@@ -154,9 +185,17 @@ function MeetingsPage() {
                           </div>
                         )}
                       </div>
-                      <Badge variant="outline" className="font-mono">
-                        Tier {m.priority}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="font-mono">
+                          Tier {m.priority}
+                        </Badge>
+                        <RowActions
+                          itemLabel={`meeting with ${m.company}`}
+                          onEdit={() => setEditingItem(m)}
+                          deleting={deleteMutation.isPending}
+                          onDelete={() => deleteMutation.mutate(m.id)}
+                        />
+                      </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
                       <span>
@@ -180,21 +219,33 @@ function MeetingsPage() {
   );
 }
 
-function ScheduleMeetingForm({ onSubmit }: { onSubmit: (m: Omit<Meeting, "id">) => void }) {
-  const [form, setForm] = useState<Omit<Meeting, "id">>({
-    date: "2026-10-06",
-    time: "10:00",
-    company: "",
-    attendee: "",
-    objective: "",
-    owner: "A. Rawji",
-    priority: "A",
-  });
+function ScheduleMeetingForm({
+  onSubmit,
+  initial,
+}: {
+  onSubmit: (m: Omit<Meeting, "id">) => void;
+  initial?: Meeting;
+}) {
+  const [form, setForm] = useState<Omit<Meeting, "id">>(
+    initial ?? {
+      date: "2026-10-06",
+      time: "10:00",
+      company: "",
+      attendee: "",
+      objective: "",
+      owner: "A. Rawji",
+      priority: "A",
+    },
+  );
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>Schedule a meeting</DialogTitle>
-        <DialogDescription>Book a slot on the IFEAT 2026 Bangkok floor.</DialogDescription>
+        <DialogTitle>{initial ? "Edit meeting" : "Schedule a meeting"}</DialogTitle>
+        <DialogDescription>
+          {initial
+            ? "Update this meeting's details."
+            : "Book a slot on the IFEAT 2026 Bangkok floor."}
+        </DialogDescription>
       </DialogHeader>
       <div className="grid gap-3 py-2">
         <div className="grid grid-cols-2 gap-3">
@@ -273,7 +324,7 @@ function ScheduleMeetingForm({ onSubmit }: { onSubmit: (m: Omit<Meeting, "id">) 
             onSubmit(form);
           }}
         >
-          Schedule meeting
+          {initial ? "Save changes" : "Schedule meeting"}
         </Button>
       </DialogFooter>
     </DialogContent>

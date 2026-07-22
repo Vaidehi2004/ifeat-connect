@@ -28,6 +28,7 @@ import { type Outreach } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { toast } from "sonner";
+import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/outreach")({
   head: () => ({ meta: [{ title: "Outreach Tracker — Rawji IFEAT 2026" }] }),
@@ -50,6 +51,7 @@ function OutreachPage() {
     queryFn: () => apiFetch<Outreach[]>("/api/outreach"),
   });
   const [open, setOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Outreach | null>(null);
 
   const byCh = items.reduce<Record<string, number>>(
     (a, o) => ((a[o.channel] = (a[o.channel] ?? 0) + 1), a),
@@ -73,6 +75,26 @@ function OutreachPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to log outreach"),
   });
 
+  const editMutation = useMutation({
+    mutationFn: (o: Outreach) =>
+      apiFetch<Outreach>(`/api/outreach/${o.id}`, { method: "PATCH", body: JSON.stringify(o) }),
+    onSuccess: (o) => {
+      queryClient.invalidateQueries({ queryKey: ["outreach"] });
+      toast.success("Outreach updated", { description: `${o.channel} → ${o.company}` });
+      setEditingItem(null);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to update outreach"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/outreach/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outreach"] });
+      toast.success("Outreach removed");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to delete outreach"),
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -91,6 +113,15 @@ function OutreachPage() {
           </Dialog>
         }
       />
+
+      <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
+        {editingItem && (
+          <LogOutreachForm
+            initial={editingItem}
+            onSubmit={(o) => editMutation.mutate({ ...o, id: editingItem.id })}
+          />
+        )}
+      </Dialog>
 
       <div className="grid gap-4 lg:grid-cols-4">
         {[
@@ -129,6 +160,7 @@ function OutreachPage() {
                     <th className="font-medium">Channel</th>
                     <th className="font-medium">Campaign</th>
                     <th className="px-4 font-medium">Outcome</th>
+                    <th className="px-4 font-medium" />
                   </tr>
                 </thead>
                 <tbody>
@@ -154,6 +186,14 @@ function OutreachPage() {
                           >
                             {o.outcome}
                           </span>
+                        </td>
+                        <td className="px-4 text-right">
+                          <RowActions
+                            itemLabel={`${o.company} outreach`}
+                            onEdit={() => setEditingItem(o)}
+                            deleting={deleteMutation.isPending}
+                            onDelete={() => deleteMutation.mutate(o.id)}
+                          />
                         </td>
                       </tr>
                     );
@@ -207,21 +247,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function LogOutreachForm({ onSubmit }: { onSubmit: (o: Omit<Outreach, "id">) => void }) {
-  const [form, setForm] = useState<Omit<Outreach, "id">>({
-    date: new Date().toISOString().slice(0, 10),
-    company: "",
-    contact: "",
-    channel: "Email",
-    campaign: "Tier A Intro",
-    outcome: "Sent",
-  });
+function LogOutreachForm({
+  onSubmit,
+  initial,
+}: {
+  onSubmit: (o: Omit<Outreach, "id">) => void;
+  initial?: Outreach;
+}) {
+  const [form, setForm] = useState<Omit<Outreach, "id">>(
+    initial ?? {
+      date: new Date().toISOString().slice(0, 10),
+      company: "",
+      contact: "",
+      channel: "Email",
+      campaign: "Tier A Intro",
+      outcome: "Sent",
+    },
+  );
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>Log outreach</DialogTitle>
+        <DialogTitle>{initial ? "Edit outreach" : "Log outreach"}</DialogTitle>
         <DialogDescription>
-          Record an email, LinkedIn, WhatsApp or phone touchpoint.
+          {initial
+            ? "Update this touchpoint's details."
+            : "Record an email, LinkedIn, WhatsApp or phone touchpoint."}
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-3 py-2">
@@ -301,7 +351,7 @@ function LogOutreachForm({ onSubmit }: { onSubmit: (o: Omit<Outreach, "id">) => 
             onSubmit(form);
           }}
         >
-          Log outreach
+          {initial ? "Save changes" : "Log outreach"}
         </Button>
       </DialogFooter>
     </DialogContent>
