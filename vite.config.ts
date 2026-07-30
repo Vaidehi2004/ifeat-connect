@@ -11,4 +11,8 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  preview: {
+    host: true,
+    allowedHosts: ["molecule-verse.com", "www.molecule-verse.com"],
+  },
 });
