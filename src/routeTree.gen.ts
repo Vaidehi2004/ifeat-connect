@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PurchaseMeetingsRouteImport } from './routes/purchase-meetings'
 import { Route as PrincipalsRouteImport } from './routes/principals'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as OutreachRouteImport } from './routes/outreach'
@@ -16,6 +17,11 @@ import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PurchaseMeetingsRoute = PurchaseMeetingsRouteImport.update({
+  id: '/purchase-meetings',
+  path: '/purchase-meetings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrincipalsRoute = PrincipalsRouteImport.update({
   id: '/principals',
   path: '/principals',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
+  '/purchase-meetings': typeof PurchaseMeetingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
+  '/purchase-meetings': typeof PurchaseMeetingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/outreach': typeof OutreachRoute
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
+  '/purchase-meetings': typeof PurchaseMeetingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/outreach'
     | '/pipeline'
     | '/principals'
+    | '/purchase-meetings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/meetings' | '/outreach' | '/pipeline' | '/principals'
+  to:
+    | '/'
+    | '/login'
+    | '/meetings'
+    | '/outreach'
+    | '/pipeline'
+    | '/principals'
+    | '/purchase-meetings'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/outreach'
     | '/pipeline'
     | '/principals'
+    | '/purchase-meetings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,10 +118,18 @@ export interface RootRouteChildren {
   OutreachRoute: typeof OutreachRoute
   PipelineRoute: typeof PipelineRoute
   PrincipalsRoute: typeof PrincipalsRoute
+  PurchaseMeetingsRoute: typeof PurchaseMeetingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/purchase-meetings': {
+      id: '/purchase-meetings'
+      path: '/purchase-meetings'
+      fullPath: '/purchase-meetings'
+      preLoaderRoute: typeof PurchaseMeetingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/principals': {
       id: '/principals'
       path: '/principals'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   OutreachRoute: OutreachRoute,
   PipelineRoute: PipelineRoute,
   PrincipalsRoute: PrincipalsRoute,
+  PurchaseMeetingsRoute: PurchaseMeetingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

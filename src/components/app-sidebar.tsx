@@ -29,6 +29,10 @@ const modules = [
   { title: "Opportunity Pipeline", url: "/pipeline", icon: TrendingUp, mod: "M5" },
 ];
 
+const purchaseModules = [
+  { title: "Meeting Planner", url: "/purchase-meetings", icon: CalendarDays, mod: "P1" },
+];
+
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
@@ -46,29 +50,34 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Campaign Modules</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {modules.map((item) => {
-                const active = pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <Link to={item.url} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        <span className="flex-1">{item.title}</span>
-                        <span className="text-[10px] font-mono text-sidebar-foreground/50 group-data-[collapsible=icon]:hidden">
-                          {item.mod}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {[
+          { label: "Sales Modules", items: modules },
+          { label: "Purchase Modules", items: purchaseModules },
+        ].map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const active = pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                        <Link to={item.url} className="flex items-center gap-3">
+                          <item.icon className="h-4 w-4" />
+                          <span className="flex-1">{item.title}</span>
+                          <span className="text-[10px] font-mono text-sidebar-foreground/50 group-data-[collapsible=icon]:hidden">
+                            {item.mod}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="px-2 py-2 text-[11px] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">

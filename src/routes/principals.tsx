@@ -76,7 +76,7 @@ function principalsPage() {
       apiFetch<principal>("/api/principals", { method: "POST", body: JSON.stringify(p) }),
     onSuccess: (p) => {
       queryClient.invalidateQueries({ queryKey: ["principals"] });
-      toast.success("principal added", { description: `${p.company} (${p.country})` });
+      toast.success("Client added", { description: `${p.company} (${p.country})` });
       setOpen(false);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to add principal"),

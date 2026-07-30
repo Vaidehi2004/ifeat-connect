@@ -32,21 +32,21 @@ import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/meetings")({
   head: () => ({ meta: [{ title: "Meeting Planner — Rawji IFEAT 2026" }] }),
-  component: MeetingsPage,
+  component: () => <MeetingsPage type="sales" />,
 });
 
-function MeetingsPage() {
+export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
   const queryClient = useQueryClient();
   const { data: items = [] } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: () => apiFetch<Meeting[]>("/api/meetings"),
+    queryKey: ["meetings", type],
+    queryFn: () => apiFetch<Meeting[]>(`/api/meetings?type=${type}`),
   });
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Meeting | null>(null);
 
   const addMutation = useMutation({
     mutationFn: (m: Omit<Meeting, "id">) =>
-      apiFetch<Meeting>("/api/meetings", { method: "POST", body: JSON.stringify(m) }),
+      apiFetch<Meeting>("/api/meetings", { method: "POST", body: JSON.stringify({ ...m, type }) }),
     onSuccess: (m) => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       toast.success("Meeting scheduled", { description: `${m.company} · ${m.date} ${m.time}` });
@@ -85,9 +85,13 @@ function MeetingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        module="Module 4"
+        module={type === "purchase" ? "Purchase Module 1" : "Module 4"}
         title="Meeting Planner"
-        description="On-floor schedule for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
+        description={
+          type === "purchase"
+            ? "On-floor supplier meetings for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
+            : "On-floor schedule for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
+        }
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

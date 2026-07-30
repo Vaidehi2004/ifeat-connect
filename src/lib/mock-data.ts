@@ -65,6 +65,7 @@ export type Meeting = {
   outcome?: string;
   followUp?: string;
   priority: "A" | "B" | "C";
+  type?: "sales" | "purchase";
 };
 
 export const meetings: Meeting[] = [];
