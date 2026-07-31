@@ -24,7 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, MapPin, Clock } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, parseISO } from "date-fns";
+import { Plus, MapPin, Clock, CalendarIcon } from "lucide-react";
 import { type Meeting } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
@@ -241,6 +244,7 @@ function ScheduleMeetingForm({
       priority: "A",
     },
   );
+  const [dateOpen, setDateOpen] = useState(false);
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
@@ -270,18 +274,26 @@ function ScheduleMeetingForm({
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
-            <Select value={form.date} onValueChange={(v) => setForm({ ...form, date: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08"].map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={dateOpen} onOpenChange={setDateOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {form.date ? format(parseISO(form.date), "d MMM yyyy") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={form.date ? parseISO(form.date) : undefined}
+                  defaultMonth={form.date ? parseISO(form.date) : undefined}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    setForm({ ...form, date: format(d, "yyyy-MM-dd") });
+                    setDateOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
           </Field>
           <Field label="Time">
             <Input
