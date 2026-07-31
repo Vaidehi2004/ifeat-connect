@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/date-picker";
 import { Mail, Linkedin, MessageCircle, Phone, Plus } from "lucide-react";
 import { type Outreach } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
@@ -32,7 +33,7 @@ import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/outreach")({
   head: () => ({ meta: [{ title: "Outreach Tracker — Rawji IFEAT 2026" }] }),
-  component: OutreachPage,
+  component: () => <OutreachPage type="sales" />,
 });
 
 const channelIcon = { Email: Mail, LinkedIn: Linkedin, WhatsApp: MessageCircle, Phone };
@@ -44,11 +45,11 @@ const outcomeColor: Record<string, string> = {
   "No Response": "bg-destructive/10 text-destructive",
 };
 
-function OutreachPage() {
+export function OutreachPage({ type }: { type: "sales" | "purchase" }) {
   const queryClient = useQueryClient();
   const { data: items = [] } = useQuery({
-    queryKey: ["outreach"],
-    queryFn: () => apiFetch<Outreach[]>("/api/outreach"),
+    queryKey: ["outreach", type],
+    queryFn: () => apiFetch<Outreach[]>(`/api/outreach?type=${type}`),
   });
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Outreach | null>(null);
@@ -66,7 +67,7 @@ function OutreachPage() {
 
   const addMutation = useMutation({
     mutationFn: (o: Omit<Outreach, "id">) =>
-      apiFetch<Outreach>("/api/outreach", { method: "POST", body: JSON.stringify(o) }),
+      apiFetch<Outreach>("/api/outreach", { method: "POST", body: JSON.stringify({ ...o, type }) }),
     onSuccess: (o) => {
       queryClient.invalidateQueries({ queryKey: ["outreach"] });
       toast.success("Outreach logged", { description: `${o.channel} → ${o.company}` });
@@ -98,9 +99,13 @@ function OutreachPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        module="Module 3"
+        module={type === "purchase" ? "Purchase Module 2" : "Module 3"}
         title="Outreach Tracker"
-        description="Every touchpoint across email, LinkedIn, WhatsApp and phone, by campaign."
+        description={
+          type === "purchase"
+            ? "Every supplier touchpoint across email, LinkedIn, WhatsApp and phone, by campaign."
+            : "Every touchpoint across email, LinkedIn, WhatsApp and phone, by campaign."
+        }
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -293,11 +298,7 @@ function LogOutreachForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date">
-            <Input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-            />
+            <DatePicker value={form.date} onChange={(date) => setForm({ ...form, date })} />
           </Field>
           <Field label="Channel">
             <Select

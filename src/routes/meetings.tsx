@@ -24,10 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, parseISO } from "date-fns";
-import { Plus, MapPin, Clock, CalendarIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { DatePicker } from "@/components/date-picker";
+import { Plus, Clock, NotebookPen, Trash2 } from "lucide-react";
 import { type Meeting } from "@/lib/mock-data";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
@@ -46,6 +55,7 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
   });
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Meeting | null>(null);
+  const [minutesItem, setMinutesItem] = useState<Meeting | null>(null);
 
   const addMutation = useMutation({
     mutationFn: (m: Omit<Meeting, "id">) =>
@@ -66,6 +76,7 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       toast.success("Meeting updated", { description: `${m.company} · ${m.date} ${m.time}` });
       setEditingItem(null);
+      setMinutesItem(null);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to update meeting"),
   });
@@ -92,8 +103,8 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
         title="Meeting Planner"
         description={
           type === "purchase"
-            ? "On-floor supplier meetings for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
-            : "On-floor schedule for IFEAT 2026 Bangkok, Oct 4–8. Bookings, objectives and follow-ups."
+            ? "On-floor supplier meetings for IFEAT 2026 Bangkok, Oct 19–23. Bookings, objectives and follow-ups."
+            : "On-floor schedule for IFEAT 2026 Bangkok, Oct 19₹–23. Bookings, objectives and follow-ups."
         }
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
@@ -113,6 +124,16 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
           <ScheduleMeetingForm
             initial={editingItem}
             onSubmit={(m) => editMutation.mutate({ ...m, id: editingItem.id })}
+          />
+        )}
+      </Dialog>
+
+      <Dialog open={!!minutesItem} onOpenChange={(o) => !o && setMinutesItem(null)}>
+        {minutesItem && (
+          <MinutesForm
+            meeting={minutesItem}
+            saving={editMutation.isPending}
+            onSave={(minutes) => editMutation.mutate({ ...minutesItem, minutes })}
           />
         )}
       </Dialog>
@@ -191,6 +212,21 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
                             <span className="font-semibold">Outcome:</span> {m.outcome}
                           </div>
                         )}
+                        {m.minutes && (
+                          <div className="mt-3 rounded-md bg-muted/60 px-2.5 py-1.5 text-sm">
+                            <span className="font-semibold">Minutes:</span>{" "}
+                            <span className="whitespace-pre-wrap">{m.minutes}</span>
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-7 px-2 text-xs bg-accent  "
+                          onClick={() => setMinutesItem(m)}
+                        >
+                          <NotebookPen className="mr-1.5 h-3.5 w-3.5" />
+                          {m.minutes ? "Edit minutes" : "Add minutes"}
+                        </Button>
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="font-mono">
@@ -226,6 +262,69 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
   );
 }
 
+function MinutesForm({
+  meeting,
+  onSave,
+  saving,
+}: {
+  meeting: Meeting;
+  onSave: (minutes: string) => void;
+  saving?: boolean;
+}) {
+  const [minutes, setMinutes] = useState(meeting.minutes ?? "");
+  return (
+    <DialogContent className="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Minutes of meeting</DialogTitle>
+        <DialogDescription>
+          {meeting.company} · {meeting.date} {meeting.time}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="py-2">
+        <Field label="Minutes">
+          <Textarea
+            rows={6}
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            placeholder="Key points, decisions and action items"
+          />
+        </Field>
+      </div>
+      <DialogFooter className="sm:justify-between">
+        {meeting.minutes ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="text-destructive hover:text-destructive">
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Delete minutes
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete minutes?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This can't be undone. The minutes for {meeting.company} will be removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction disabled={saving} onClick={() => onSave("")}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <span />
+        )}
+        <Button disabled={saving} onClick={() => onSave(minutes.trim())}>
+          Save
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
 function ScheduleMeetingForm({
   onSubmit,
   initial,
@@ -244,7 +343,6 @@ function ScheduleMeetingForm({
       priority: "A",
     },
   );
-  const [dateOpen, setDateOpen] = useState(false);
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
@@ -274,26 +372,7 @@ function ScheduleMeetingForm({
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Date">
-            <Popover open={dateOpen} onOpenChange={setDateOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.date ? format(parseISO(form.date), "d MMM yyyy") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={form.date ? parseISO(form.date) : undefined}
-                  defaultMonth={form.date ? parseISO(form.date) : undefined}
-                  onSelect={(d) => {
-                    if (!d) return;
-                    setForm({ ...form, date: format(d, "yyyy-MM-dd") });
-                    setDateOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePicker value={form.date} onChange={(date) => setForm({ ...form, date })} />
           </Field>
           <Field label="Time">
             <Input

@@ -31,6 +31,8 @@ const modules = [
 
 const purchaseModules = [
   { title: "Meeting Planner", url: "/purchase-meetings", icon: CalendarDays, mod: "P1" },
+  { title: "Outreach Tracker", url: "/purchase-outreach", icon: Send, mod: "P2" },
+  { title: "Sourcing Pipeline", url: "/purchase-pipeline", icon: TrendingUp, mod: "P3" },
 ];
 
 export function AppSidebar() {
@@ -82,7 +84,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="px-2 py-2 text-[11px] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
           <div className="font-semibold text-sidebar-foreground/80">T-23 days to event</div>
-          <div>Oct 4 – 8, 2026 · Bangkok</div>
+          <div>Oct 19 – 23, 2026 · Bangkok</div>
         </div>
       </SidebarFooter>
     </Sidebar>

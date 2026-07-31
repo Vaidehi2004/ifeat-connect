@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PurchasePipelineRouteImport } from './routes/purchase-pipeline'
+import { Route as PurchaseOutreachRouteImport } from './routes/purchase-outreach'
 import { Route as PurchaseMeetingsRouteImport } from './routes/purchase-meetings'
 import { Route as PrincipalsRouteImport } from './routes/principals'
 import { Route as PipelineRouteImport } from './routes/pipeline'
@@ -17,6 +19,16 @@ import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PurchasePipelineRoute = PurchasePipelineRouteImport.update({
+  id: '/purchase-pipeline',
+  path: '/purchase-pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchaseOutreachRoute = PurchaseOutreachRouteImport.update({
+  id: '/purchase-outreach',
+  path: '/purchase-outreach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PurchaseMeetingsRoute = PurchaseMeetingsRouteImport.update({
   id: '/purchase-meetings',
   path: '/purchase-meetings',
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
   '/purchase-meetings': typeof PurchaseMeetingsRoute
+  '/purchase-outreach': typeof PurchaseOutreachRoute
+  '/purchase-pipeline': typeof PurchasePipelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
   '/purchase-meetings': typeof PurchaseMeetingsRoute
+  '/purchase-outreach': typeof PurchaseOutreachRoute
+  '/purchase-pipeline': typeof PurchasePipelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/pipeline': typeof PipelineRoute
   '/principals': typeof PrincipalsRoute
   '/purchase-meetings': typeof PurchaseMeetingsRoute
+  '/purchase-outreach': typeof PurchaseOutreachRoute
+  '/purchase-pipeline': typeof PurchasePipelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/pipeline'
     | '/principals'
     | '/purchase-meetings'
+    | '/purchase-outreach'
+    | '/purchase-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/pipeline'
     | '/principals'
     | '/purchase-meetings'
+    | '/purchase-outreach'
+    | '/purchase-pipeline'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/pipeline'
     | '/principals'
     | '/purchase-meetings'
+    | '/purchase-outreach'
+    | '/purchase-pipeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,10 +143,26 @@ export interface RootRouteChildren {
   PipelineRoute: typeof PipelineRoute
   PrincipalsRoute: typeof PrincipalsRoute
   PurchaseMeetingsRoute: typeof PurchaseMeetingsRoute
+  PurchaseOutreachRoute: typeof PurchaseOutreachRoute
+  PurchasePipelineRoute: typeof PurchasePipelineRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/purchase-pipeline': {
+      id: '/purchase-pipeline'
+      path: '/purchase-pipeline'
+      fullPath: '/purchase-pipeline'
+      preLoaderRoute: typeof PurchasePipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchase-outreach': {
+      id: '/purchase-outreach'
+      path: '/purchase-outreach'
+      fullPath: '/purchase-outreach'
+      preLoaderRoute: typeof PurchaseOutreachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/purchase-meetings': {
       id: '/purchase-meetings'
       path: '/purchase-meetings'
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   PipelineRoute: PipelineRoute,
   PrincipalsRoute: PrincipalsRoute,
   PurchaseMeetingsRoute: PurchaseMeetingsRoute,
+  PurchaseOutreachRoute: PurchaseOutreachRoute,
+  PurchasePipelineRoute: PurchasePipelineRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

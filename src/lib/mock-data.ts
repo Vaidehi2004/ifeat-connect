@@ -50,6 +50,7 @@ export type Outreach = {
   channel: "Email" | "LinkedIn" | "WhatsApp" | "Phone";
   campaign: string;
   outcome: "Sent" | "Opened" | "Replied" | "Meeting Booked" | "No Response";
+  type?: "sales" | "purchase";
 };
 
 export const outreach: Outreach[] = [];
@@ -64,6 +65,7 @@ export type Meeting = {
   owner: string;
   outcome?: string;
   followUp?: string;
+  minutes?: string;
   priority: "A" | "B" | "C";
   type?: "sales" | "purchase";
 };
@@ -75,11 +77,39 @@ export type Opportunity = {
   company: string;
   country: string;
   region: string;
-  type: "Distribution" | "Direct Manufacturing" | "Joint Venture" | "Toll Manufacturing";
+  type: OpportunityType;
   revenue: number;
   probability: number;
-  stage: "Discovery" | "Qualified" | "Proposal" | "Negotiation" | "Closed Won" | "Closed Lost";
+  stage: OpportunityStage;
+  /** "type" is the deal type, so the sales/purchase flag is "kind" */
+  kind?: "sales" | "purchase";
 };
+
+export type OpportunityType =
+  | "Distribution"
+  | "Direct Manufacturing"
+  | "Joint Venture"
+  | "Toll Manufacturing"
+  | "New Supplier"
+  | "Backup Supplier"
+  | "Price Renegotiation"
+  | "Exclusive Supply"
+  | "Sample Evaluation";
+
+export type OpportunityStage =
+  | "Discovery"
+  | "Qualified"
+  | "Proposal"
+  | "Negotiation"
+  | "Closed Won"
+  | "Closed Lost"
+  | "Initial Contact"
+  | "Sample Evaluation"
+  | "Price Negotiation"
+  | "Contract Review"
+  | "Onboarding"
+  | "Active Supplier"
+  | "Lost";
 
 export const opportunities: Opportunity[] = [];
 

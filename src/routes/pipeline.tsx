@@ -31,37 +31,84 @@ import { RowActions } from "@/components/row-actions";
 
 export const Route = createFileRoute("/pipeline")({
   head: () => ({ meta: [{ title: "Opportunity Pipeline — Rawji IFEAT 2026" }] }),
-  component: PipelinePage,
+  component: () => <PipelinePage kind="sales" />,
 });
 
-const stages: Opportunity["stage"][] = [
-  "Discovery",
-  "Qualified",
-  "Proposal",
-  "Negotiation",
-  "Closed Won",
-  "Closed Lost",
-];
+const config = {
+  sales: {
+    module: "Module 5",
+    title: "Opportunity Pipeline",
+    description:
+      "Distribution, direct manufacturing, JV and toll opportunities — weighted by stage probability.",
+    addLabel: "Add opportunity",
+    types: [
+      "Distribution",
+      "Direct Manufacturing",
+      "Joint Venture",
+      "Toll Manufacturing",
+    ] as Opportunity["type"][],
+    stages: [
+      "Discovery",
+      "Qualified",
+      "Proposal",
+      "Negotiation",
+      "Closed Won",
+      "Closed Lost",
+    ] as Opportunity["stage"][],
+  },
+  purchase: {
+    module: "Purchase Module 3",
+    title: "Sourcing Pipeline",
+    description:
+      "New, backup and exclusive supply opportunities — weighted by stage probability.",
+    addLabel: "Add supplier opportunity",
+    types: [
+      "New Supplier",
+      "Backup Supplier",
+      "Price Renegotiation",
+      "Exclusive Supply",
+      "Sample Evaluation",
+    ] as Opportunity["type"][],
+    stages: [
+      "Initial Contact",
+      "Sample Evaluation",
+      "Price Negotiation",
+      "Contract Review",
+      "Onboarding",
+      "Active Supplier",
+      "Lost",
+    ] as Opportunity["stage"][],
+  },
+} as const;
 
 const typeColor: Record<Opportunity["type"], string> = {
   Distribution: "bg-primary/15 text-primary",
   "Direct Manufacturing": "bg-[var(--gold)]/25 text-amber-800",
   "Joint Venture": "bg-violet-100 text-violet-800",
   "Toll Manufacturing": "bg-emerald-100 text-emerald-800",
+  "New Supplier": "bg-primary/15 text-primary",
+  "Backup Supplier": "bg-blue-100 text-blue-800",
+  "Price Renegotiation": "bg-[var(--gold)]/25 text-amber-800",
+  "Exclusive Supply": "bg-violet-100 text-violet-800",
+  "Sample Evaluation": "bg-emerald-100 text-emerald-800",
 };
 
-function PipelinePage() {
+export function PipelinePage({ kind }: { kind: "sales" | "purchase" }) {
+  const cfg = config[kind];
   const queryClient = useQueryClient();
   const { data: items = [] } = useQuery({
-    queryKey: ["opportunities"],
-    queryFn: () => apiFetch<Opportunity[]>("/api/opportunities"),
+    queryKey: ["opportunities", kind],
+    queryFn: () => apiFetch<Opportunity[]>(`/api/opportunities?kind=${kind}`),
   });
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Opportunity | null>(null);
 
   const addMutation = useMutation({
     mutationFn: (o: Omit<Opportunity, "id">) =>
-      apiFetch<Opportunity>("/api/opportunities", { method: "POST", body: JSON.stringify(o) }),
+      apiFetch<Opportunity>("/api/opportunities", {
+        method: "POST",
+        body: JSON.stringify({ ...o, kind }),
+      }),
     onSuccess: (o) => {
       queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       toast.success("Opportunity added", {
@@ -102,18 +149,18 @@ function PipelinePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        module="Module 5"
-        title="Opportunity Pipeline"
-        description="Distribution, direct manufacturing, JV and toll opportunities — weighted by stage probability."
+        module={cfg.module}
+        title={cfg.title}
+        description={cfg.description}
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="mr-1.5 h-4 w-4" />
-                Add opportunity
+                {cfg.addLabel}
               </Button>
             </DialogTrigger>
-            <AddOpportunityForm onSubmit={(o) => addMutation.mutate(o)} />
+            <AddOpportunityForm cfg={cfg} onSubmit={(o) => addMutation.mutate(o)} />
           </Dialog>
         }
       />
@@ -121,6 +168,7 @@ function PipelinePage() {
       <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
         {editingItem && (
           <AddOpportunityForm
+            cfg={cfg}
             initial={editingItem}
             onSubmit={(o) => editMutation.mutate({ ...o, id: editingItem.id })}
           />
@@ -128,7 +176,7 @@ function PipelinePage() {
       </Dialog>
 
       <div className="flex flex-col gap-4">
-        {stages.map((stage) => {
+        {cfg.stages.map((stage) => {
           const stageItems = items.filter((o) => o.stage === stage);
           const sum = stageItems.reduce((s, o) => s + o.revenue, 0);
           return (
@@ -206,9 +254,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function AddOpportunityForm({
+  cfg,
   onSubmit,
   initial,
 }: {
+  cfg: (typeof config)[keyof typeof config];
   onSubmit: (o: Omit<Opportunity, "id">) => void;
   initial?: Opportunity;
 }) {
@@ -217,10 +267,10 @@ function AddOpportunityForm({
       company: "",
       country: "",
       region: "Europe",
-      type: "Distribution",
+      type: cfg.types[0],
       revenue: 50000,
       probability: 0.3,
-      stage: "Discovery",
+      stage: cfg.stages[0],
     },
   );
   return (
@@ -251,12 +301,7 @@ function AddOpportunityForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[
-                  "Distribution",
-                  "Direct Manufacturing",
-                  "Joint Venture",
-                  "Toll Manufacturing",
-                ].map((t) => (
+                {cfg.types.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>
@@ -317,7 +362,7 @@ function AddOpportunityForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {stages.map((s) => (
+                {cfg.stages.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
                   </SelectItem>
