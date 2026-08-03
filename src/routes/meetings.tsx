@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/date-picker";
 import { Plus, Clock, NotebookPen, Trash2 } from "lucide-react";
 import { type Meeting } from "@/lib/mock-data";
@@ -142,7 +143,7 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
         {[
           { label: "Total meetings", value: items.length },
           { label: "Confirmed", value: items.length, accent: "text-success" },
-          { label: "Conducted", value: items.filter((m) => m.outcome).length },
+          { label: "Conducted", value: items.filter((m) => m.done).length },
           {
             label: "Tier A",
             value: items.filter((m) => m.priority === "A").length,
@@ -199,12 +200,23 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-3">
+                      <Checkbox
+                        aria-label="Mark meeting done"
+                        checked={!!m.done}
+                        disabled={editMutation.isPending}
+                        onCheckedChange={(c) => editMutation.mutate({ ...m, done: c === true })}
+                        className="mt-0.5 h-5! w-5! shrink-0 rounded-sm"
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           {m.time}
                         </div>
-                        <div className="mt-1 text-base font-semibold">{m.company}</div>
+                        <div
+                          className={`mt-1 text-base font-semibold ${m.done ? "text-muted-foreground line-through" : ""}`}
+                        >
+                          {m.company}
+                        </div>
                         <div className="text-xs text-muted-foreground">w/ {m.attendee}</div>
                         <p className="mt-2 text-sm">{m.objective}</p>
                         {m.outcome && (

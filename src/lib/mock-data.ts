@@ -66,6 +66,7 @@ export type Meeting = {
   outcome?: string;
   followUp?: string;
   minutes?: string;
+  done?: boolean;
   priority: "A" | "B" | "C";
   type?: "sales" | "purchase";
 };
