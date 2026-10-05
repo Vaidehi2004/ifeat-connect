@@ -95,6 +95,9 @@ export function MeetingsPage({ type }: { type: "sales" | "purchase" }) {
     (a[m.date] ??= []).push(m);
     return a;
   }, {});
+  Object.values(byDate).forEach((meetings) =>
+    meetings.sort((a, b) => a.time.localeCompare(b.time)),
+  );
   const days = Object.keys(byDate).sort();
 
   return (
